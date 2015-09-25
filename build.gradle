@@ -2,6 +2,7 @@ apply plugin: 'maven'
 apply plugin: 'war'
 apply plugin: 'eclipse'
 apply plugin: 'com.bmuschko.tomcat'
+apply plugin: 'org.hidetake.ssh'
 apply from: file("$projectDir/gradle/unit-testing.gradle")
 apply from: file("$projectDir/gradle/integration-testing.gradle")
 apply from: file("$projectDir/gradle/code-quality.gradle")
@@ -41,6 +42,7 @@ buildscript {
 
   dependencies {
     classpath 'com.bmuschko:gradle-tomcat-plugin:2.2.2'
+    classpath 'org.hidetake:gradle-ssh-plugin:0.4.5'
   }
 }
 
@@ -54,6 +56,39 @@ uploadArchives {
       repository(url: "file://${buildDir}/repo/")
       pom.project {
         description "Gradle Training Example App"
+      }
+    }
+  }
+}
+
+remotes {
+  webServer {
+    host = '10.1.1.33'
+    user = 'vagrant'
+    password = 'vagrant'
+  } 
+}
+
+ssh.settings {
+  knownHosts = allowAnyHosts
+}
+
+task deploy {
+  Task warTask = project.tasks.getByName('war')
+  File webAppArtifactPath = warTask.archivePath
+  String webAppArtifactName = warTask.archiveName
+
+  doLast {
+    ssh.run {
+      session(remotes.webServer) {
+        execute 'sudo service tomcat7 stop'
+
+        put webAppArtifactPath, '/tmp'
+        execute "sudo mv /tmp/$webAppArtifactName /tmp/sample-app.war"
+        execute "sudo rm -rf /var/lib/tomcat7/webapps/sample-app"
+        execute "sudo mv /tmp/sample-app.war /var/lib/tomcat7/webapps"
+
+        execute 'sudo service tomcat7 start'
       }
     }
   }
