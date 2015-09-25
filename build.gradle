@@ -1,3 +1,4 @@
+apply plugin: 'maven'
 apply plugin: 'war'
 apply plugin: 'eclipse'
 apply plugin: 'com.bmuschko.tomcat'
@@ -6,7 +7,7 @@ apply from: file("$projectDir/gradle/integration-testing.gradle")
 apply from: file("$projectDir/gradle/code-quality.gradle")
 
 group = 'org.gradle.training'
-version = new ProjectVersion(1, 0, new Date().time.toString())
+version = new ProjectVersion(1, 9, new Date().time.toString())
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -45,6 +46,17 @@ buildscript {
 
 tomcat {
   contextPath = 'sample-app'
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(url: "file://${buildDir}/repo/")
+      pom.project {
+        description "Gradle Training Example App"
+      }
+    }
+  }
 }
 
 task printVersion {
