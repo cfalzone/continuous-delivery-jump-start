@@ -1,0 +1,36 @@
+apply plugin: 'findbugs'
+apply plugin: 'jacoco'
+
+// FindBugs
+findbugs {
+  ignoreFailures = true
+}
+
+tasks.withType(FindBugs) {
+  reports {
+    xml.enabled = false
+    html.enabled = true
+  }
+}
+
+
+// JaCoCo
+jacocoTestReport {
+  reports {
+    html.destination = file("$buildDir/reports/jacoco/unit")
+  }
+}
+
+task jacocoIntegrationTestReport(type: JacocoReport) {
+  executionData integrationTest
+  sourceSets sourceSets.main
+  reports {
+    html.destination = file("$buildDir/reports/jacoco/integration")
+  }
+}
+
+tasks.withType(Test) {
+  jacoco {
+    enabled = project.hasProperty('codeCoverageEnabled') ? Boolean.valueOf(project.getProperty('codeCoverageEnabled')) : false
+  }
+}
